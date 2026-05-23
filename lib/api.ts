@@ -87,13 +87,13 @@ export namespace cards {
         id: string
         name: string
         slug: string
+        "logo_url": string | null
         "created_at": string
     }
 
     export interface Card {
         id: string
-        "bank_id": string
-        "bank_name": string
+        bank: Bank
         label: string
         purpose: string
         last4: string

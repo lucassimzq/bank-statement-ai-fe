@@ -87,7 +87,7 @@ export namespace cards {
         id: string
         name: string
         slug: string
-        "logo_url": string | null
+        "logo_url": string
         "created_at": string
     }
 
@@ -163,13 +163,13 @@ export namespace statements {
 
     export interface Statement {
         id: string
-        status: number        // 0=parsing, 1=parsed, 2=error
-        message: string | null
-        year: number | null
-        month: number | null
-        "statement_bal": string | null
-        "file_path": string | null
-        "parsed_at": string | null
+        status: number
+        message: string
+        year: number
+        month: number
+        "statement_bal": string
+        "file_path": string
+        "parsed_at": string
         "created_at": string
     }
 
@@ -212,7 +212,8 @@ export namespace statements {
         }
 
         /**
-         * Upload accepts a multipart form with fields: card_id, year, month, file (PDF).
+         * Upload accepts a multipart form with fields: file (PDF).
+         * Cards and period are extracted from the PDF by the AI parser.
          */
         public async Upload(method: "POST", body?: RequestInit["body"], options?: CallParameters): Promise<globalThis.Response> {
             return this.baseClient.callAPI(method, `/statements/upload`, body, options)
@@ -228,8 +229,29 @@ export namespace transactions {
         "created_at": string
     }
 
+    export interface CategoryMapping {
+        id: string
+        "merchant_pattern": string
+        "category_slug": string
+        "category_name": string
+        "created_at": string
+    }
+
+    export interface CreateCategoryMappingParams {
+        "merchant_pattern": string
+        "category_slug": string
+    }
+
+    export interface GetMonthlySpendingResponse {
+        data: MonthlySpendingPoint[]
+    }
+
     export interface ListCategoriesResponse {
         categories: Category[]
+    }
+
+    export interface ListCategoryMappingsResponse {
+        mappings: CategoryMapping[]
     }
 
     export interface ListTransactionsParams {
@@ -241,6 +263,13 @@ export namespace transactions {
 
     export interface ListTransactionsResponse {
         transactions: Transaction[]
+    }
+
+    export interface MonthlySpendingPoint {
+        "card_id": string
+        year: number
+        month: number
+        total: string
     }
 
     export interface Transaction {
@@ -262,9 +291,39 @@ export namespace transactions {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.CreateCategoryMapping = this.CreateCategoryMapping.bind(this)
+            this.DeleteCategoryMapping = this.DeleteCategoryMapping.bind(this)
+            this.GetMonthlySpending = this.GetMonthlySpending.bind(this)
             this.GetTransaction = this.GetTransaction.bind(this)
             this.ListCategories = this.ListCategories.bind(this)
+            this.ListCategoryMappings = this.ListCategoryMappings.bind(this)
             this.ListTransactions = this.ListTransactions.bind(this)
+        }
+
+        /**
+         * CreateCategoryMapping adds a new merchant pattern → category mapping.
+         */
+        public async CreateCategoryMapping(params: CreateCategoryMappingParams): Promise<CategoryMapping> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("POST", `/category-mappings`, JSON.stringify(params))
+            return await resp.json() as CategoryMapping
+        }
+
+        /**
+         * DeleteCategoryMapping removes a mapping by ID.
+         */
+        public async DeleteCategoryMapping(id: string): Promise<void> {
+            await this.baseClient.callTypedAPI("DELETE", `/category-mappings/${encodeURIComponent(id)}`)
+        }
+
+        /**
+         * GetMonthlySpending returns total spending grouped by card and month, across all time.
+         * Used by the frontend trend chart.
+         */
+        public async GetMonthlySpending(): Promise<GetMonthlySpendingResponse> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/monthly-spending`)
+            return await resp.json() as GetMonthlySpendingResponse
         }
 
         public async GetTransaction(id: string): Promise<Transaction> {
@@ -277,6 +336,15 @@ export namespace transactions {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI("GET", `/categories`)
             return await resp.json() as ListCategoriesResponse
+        }
+
+        /**
+         * ListCategoryMappings returns all manual merchant → category mappings.
+         */
+        public async ListCategoryMappings(): Promise<ListCategoryMappingsResponse> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/category-mappings`)
+            return await resp.json() as ListCategoryMappingsResponse
         }
 
         /**

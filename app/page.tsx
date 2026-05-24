@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar"
 import { CardFilter } from "@/components/dashboard/card-filter"
 import { PeriodFilter } from "@/components/dashboard/period-filter"
 import { CategoryDonutChart } from "@/components/dashboard/category-donut-chart"
+import { SpendingTrendChart } from "@/components/dashboard/spending-trend-chart"
 import { TransactionList } from "@/components/dashboard/transaction-list"
 
 export default function DashboardPage() {
@@ -16,6 +17,8 @@ export default function DashboardPage() {
   const [allCards, setAllCards] = useState<cards.Card[]>([])
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [txns, setTxns] = useState<transactions.Transaction[]>([])
+  const [monthlySpending, setMonthlySpending] = useState<transactions.MonthlySpendingPoint[]>([])
+  const [trendLoading, setTrendLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
@@ -28,6 +31,16 @@ export default function DashboardPage() {
   useEffect(() => {
     client.cards.ListCards().then((res) => setAllCards(res.cards))
   }, [cardsKey])
+
+  // Fetch monthly spending trend — refreshes after new statements are uploaded
+  useEffect(() => {
+    setTrendLoading(true)
+    client.transactions
+      .GetMonthlySpending()
+      .then((res) => setMonthlySpending(res.data ?? []))
+      .catch(() => setMonthlySpending([]))
+      .finally(() => setTrendLoading(false))
+  }, [refreshKey])
 
   // Fetch transactions whenever card, period, or refreshKey changes
   useEffect(() => {
@@ -85,6 +98,8 @@ export default function DashboardPage() {
             <PeriodFilter year={year} month={month} onYearChange={setYear} onMonthChange={setMonth} />
           </div>
         </div>
+
+        <SpendingTrendChart data={monthlySpending} cards={allCards} selectedCardId={selectedCardId} loading={trendLoading} />
 
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>

@@ -71,7 +71,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Navbar cards={allCards} onCardCreated={handleCardCreated} onStatementUploaded={handleStatementUploaded} />
+      <Navbar onCardCreated={handleCardCreated} onStatementUploaded={handleStatementUploaded} />
 
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -97,6 +97,7 @@ export default function DashboardPage() {
             />
             <TransactionList
               transactions={txns}
+              cards={allCards}
               selectedCategory={selectedCategory}
               expanded={expanded}
               onToggle={() => setExpanded((v) => !v)}

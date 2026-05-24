@@ -163,7 +163,6 @@ export namespace statements {
 
     export interface Statement {
         id: string
-        "card_id": string
         status: number        // 0=parsing, 1=parsed, 2=error
         message: string | null
         year: number | null

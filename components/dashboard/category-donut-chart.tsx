@@ -90,24 +90,30 @@ export function CategoryDonutChart({ transactions, selectedCategory, onCategoryS
         </div>
 
         <ul className="flex flex-col gap-2.5 text-sm w-full">
-          {data.map((d, i) => (
-            <li
-              key={d.name}
-              onClick={() => handleSliceClick(d)}
-              className={`flex items-center gap-2 cursor-pointer rounded-md px-2 py-1 transition-colors hover:bg-muted/50 ${
-                selectedCategory && selectedCategory !== d.name ? "opacity-30" : ""
-              }`}
-            >
-              <span
-                className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
-                style={{ background: COLORS[i % COLORS.length] }}
-              />
-              <span className="text-muted-foreground">{d.name}</span>
-              <span className="ml-auto font-medium tabular-nums">
-                MYR {d.value.toFixed(2)}
-              </span>
-            </li>
-          ))}
+          {data.map((d, i) => {
+            const pct = total > 0 ? (d.value / total) * 100 : 0
+            return (
+              <li
+                key={d.name}
+                onClick={() => handleSliceClick(d)}
+                className={`flex items-center gap-2 cursor-pointer rounded-md px-2 py-1 transition-colors hover:bg-muted/50 ${
+                  selectedCategory && selectedCategory !== d.name ? "opacity-30" : ""
+                }`}
+              >
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                  style={{ background: COLORS[i % COLORS.length] }}
+                />
+                <span className="text-muted-foreground">{d.name}</span>
+                <span className="ml-2 text-xs text-muted-foreground/60 tabular-nums">
+                  {pct.toFixed(1)}%
+                </span>
+                <span className="ml-auto font-medium tabular-nums">
+                  MYR {d.value.toFixed(2)}
+                </span>
+              </li>
+            )
+          })}
         </ul>
       </CardContent>
     </Card>

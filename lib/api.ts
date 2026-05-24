@@ -164,11 +164,13 @@ export namespace statements {
     export interface Statement {
         id: string
         "card_id": string
-        year: number
-        month: number
-        "statement_bal": string
-        "file_path": string
-        "parsed_at": string
+        status: number        // 0=parsing, 1=parsed, 2=error
+        message: string | null
+        year: number | null
+        month: number | null
+        "statement_bal": string | null
+        "file_path": string | null
+        "parsed_at": string | null
         "created_at": string
     }
 

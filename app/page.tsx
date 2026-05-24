@@ -21,11 +21,13 @@ export default function DashboardPage() {
   const [expanded, setExpanded] = useState(false)
   // bump this to force a transaction re-fetch after upload
   const [refreshKey, setRefreshKey] = useState(0)
+  // bump to re-fetch cards list
+  const [cardsKey, setCardsKey] = useState(0)
 
-  // Fetch cards once on mount
+  // Fetch cards on mount and whenever a new card is added
   useEffect(() => {
     client.cards.ListCards().then((res) => setAllCards(res.cards))
-  }, [])
+  }, [cardsKey])
 
   // Fetch transactions whenever card, period, or refreshKey changes
   useEffect(() => {
@@ -59,13 +61,17 @@ export default function DashboardPage() {
     if (category !== null) setExpanded(true)
   }
 
+  const handleCardCreated = useCallback(() => {
+    setCardsKey((k) => k + 1)
+  }, [])
+
   const handleStatementUploaded = useCallback(() => {
     setRefreshKey((k) => k + 1)
   }, [])
 
   return (
     <>
-      <Navbar onStatementUploaded={handleStatementUploaded} />
+      <Navbar cards={allCards} onCardCreated={handleCardCreated} onStatementUploaded={handleStatementUploaded} />
 
       <div className="p-6 max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">

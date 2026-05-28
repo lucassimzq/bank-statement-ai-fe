@@ -13,10 +13,69 @@ import {
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import type {cards, transactions} from "@/lib/api"
 
+// Dark-mode calibrated palette — mirrors the bar chart colours exactly
+// so both charts speak the same visual language.
 const LINE_COLORS = [
-    "#6366f1", "#f59e0b", "#10b981", "#ef4444",
-    "#3b82f6", "#ec4899", "#14b8a6", "#f97316",
+    "#6B9EC4", // blue     — H 206  S 45%  L 60%
+    "#D9924F", // amber    — H  29  S 62%  L 58%
+    "#6DB562", // green    — H 112  S 36%  L 55%
+    "#D47878", // coral    — H   0  S 50%  L 65%
+    "#82C4C0", // teal     — H 177  S 40%  L 63%
+    "#BB8EB7", // mauve    — H 303  S 30%  L 63%
+    "#D4C062", // gold     — H  46  S 60%  L 61%
+    "#D4909A", // blush    — H 350  S 45%  L 70%
 ]
+
+// ── Custom tooltip ────────────────────────────────────────────────────────────
+
+interface TooltipPayloadEntry {
+    dataKey: string
+    value: number
+    color: string
+}
+
+function AreaTooltip({
+    active, payload, label, getLabel,
+}: {
+    active?: boolean
+    payload?: TooltipPayloadEntry[]
+    label?: string
+    getLabel: (key: string) => string
+}) {
+    if (!active || !payload?.length) return null
+    return (
+        <div style={{
+            background: "#1a1a2e",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: 8,
+            padding: "10px 14px",
+            fontSize: 12,
+            minWidth: 200,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.7)",
+        }}>
+            <p style={{ fontWeight: 700, marginBottom: 6, color: "#ffffff" }}>
+                {label}
+            </p>
+            {payload.map((entry) => (
+                <div key={entry.dataKey} style={{
+                    display: "flex", alignItems: "center",
+                    gap: 8, marginBottom: 3,
+                }}>
+                    <span style={{
+                        width: 8, height: 8, borderRadius: "50%",
+                        background: entry.color, flexShrink: 0,
+                    }} />
+                    <span style={{ color: "rgba(255,255,255,0.65)", flex: 1 }}>
+                        {getLabel(entry.dataKey)}
+                    </span>
+                    <span style={{ fontWeight: 600, color: "#ffffff" }}>
+                        MYR {Number(entry.value).toFixed(2)}
+                    </span>
+                </div>
+            ))}
+        </div>
+    )
+}
 
 interface Props {
     data: transactions.MonthlySpendingPoint[]
@@ -109,35 +168,28 @@ export function SpendingTrendChart({data, cards, selectedCardId, loading, onMont
                         <defs>
                             {cardIds.map((cardId, i) => (
                                 <linearGradient key={cardId} id={`gradient-${i}`} x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={LINE_COLORS[i % LINE_COLORS.length]} stopOpacity={0.3}/>
+                                    <stop offset="5%"  stopColor={LINE_COLORS[i % LINE_COLORS.length]} stopOpacity={0.25}/>
                                     <stop offset="95%" stopColor={LINE_COLORS[i % LINE_COLORS.length]} stopOpacity={0}/>
                                 </linearGradient>
                             ))}
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted"/>
-                        <XAxis
-                            dataKey="month"
-                            tick={{fontSize: 12}}
-                            className="text-muted-foreground"
-                        />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))"/>
+                        <XAxis dataKey="month" tick={{fontSize: 12}}/>
                         <YAxis
                             tick={{fontSize: 12}}
                             tickFormatter={(v) => `${Number(v).toFixed(0)}`}
                             width={60}
-                            className="text-muted-foreground"
                         />
                         <Tooltip
-                            formatter={(value, name) => [
-                                `MYR ${Number(value).toFixed(2)}`,
-                                cardLabel(name as string),
-                            ]}
-                            contentStyle={{
-                                fontSize: 12,
-                                borderRadius: "8px",
-                                border: "1px solid hsl(var(--border))",
-                                background: "hsl(var(--card))",
-                                color: "hsl(var(--card-foreground))",
-                            }}
+                            cursor={{ stroke: "hsl(var(--border))", strokeWidth: 1 }}
+                            content={(props) => (
+                                <AreaTooltip
+                                    active={props.active}
+                                    payload={props.payload as unknown as TooltipPayloadEntry[]}
+                                    label={props.label as string}
+                                    getLabel={cardLabel}
+                                />
+                            )}
                         />
                         <Legend
                             formatter={(value) => (

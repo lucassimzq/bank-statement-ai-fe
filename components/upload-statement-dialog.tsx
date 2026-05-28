@@ -15,10 +15,17 @@ import { Label } from "@/components/ui/label"
 
 interface Props {
     onUploaded?: () => void
+    /** Controlled mode: pass open + onOpenChange to drive the dialog externally.
+     *  When provided the built-in trigger button is hidden. */
+    open?: boolean
+    onOpenChange?: (v: boolean) => void
 }
 
-export function UploadStatementDialog({ onUploaded }: Props) {
-    const [open, setOpen] = useState(false)
+export function UploadStatementDialog({ onUploaded, open: controlledOpen, onOpenChange: controlledOnOpenChange }: Props) {
+    const isControlled = controlledOpen !== undefined
+    const [internalOpen, setInternalOpen] = useState(false)
+    const open = isControlled ? controlledOpen! : internalOpen
+
     const [file, setFile] = useState<File | null>(null)
     const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle")
     const [errorMsg, setErrorMsg] = useState("")
@@ -32,7 +39,11 @@ export function UploadStatementDialog({ onUploaded }: Props) {
     }
 
     const handleOpenChange = (v: boolean) => {
-        setOpen(v)
+        if (isControlled) {
+            controlledOnOpenChange?.(v)
+        } else {
+            setInternalOpen(v)
+        }
         if (!v) reset()
     }
 
@@ -64,12 +75,14 @@ export function UploadStatementDialog({ onUploaded }: Props) {
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button size="sm" className="gap-2">
-                    <Upload className="h-4 w-4" />
-                    Upload Statement
-                </Button>
-            </DialogTrigger>
+            {!isControlled && (
+                <DialogTrigger asChild>
+                    <Button size="sm" className="gap-2">
+                        <Upload className="h-4 w-4" />
+                        Upload Statement
+                    </Button>
+                </DialogTrigger>
+            )}
 
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>

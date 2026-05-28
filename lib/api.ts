@@ -153,12 +153,33 @@ export namespace cards {
 }
 
 export namespace statements {
+    /**
+     * CardStatementInfo is a summary of one card found within a statement.
+     */
+    export interface CardStatementInfo {
+        "card_last4": string
+        /**
+         * null when the card was not in our system
+         */
+        "card_id": string
+
+        /**
+         * 1 = parsed, 2 = skipped
+         */
+        status: number
+
+        /**
+         * per-card balance from the statement
+         */
+        "statement_bal": string
+    }
+
     export interface ListStatementsParams {
         CardID: string
     }
 
     export interface ListStatementsResponse {
-        statements: Statement[]
+        statements: StatementWithCards[]
     }
 
     export interface Statement {
@@ -173,6 +194,22 @@ export namespace statements {
         "created_at": string
     }
 
+    /**
+     * StatementWithCards embeds a Statement plus the cards detected in it.
+     */
+    export interface StatementWithCards {
+        id: string
+        status: number
+        message: string
+        year: number
+        month: number
+        "statement_bal": string
+        "file_path": string
+        "parsed_at": string
+        "created_at": string
+        cards: CardStatementInfo[]
+    }
+
     export interface UpdateBalanceParams {
         "statement_bal": string
     }
@@ -182,10 +219,20 @@ export namespace statements {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.DeleteStatement = this.DeleteStatement.bind(this)
             this.GetStatement = this.GetStatement.bind(this)
             this.ListStatements = this.ListStatements.bind(this)
+            this.RetryStatement = this.RetryStatement.bind(this)
             this.UpdateBalance = this.UpdateBalance.bind(this)
             this.Upload = this.Upload.bind(this)
+        }
+
+        /**
+         * DeleteStatement permanently removes a statement that failed to parse.
+         * Only error-status statements can be deleted — parsed statements are permanent records.
+         */
+        public async DeleteStatement(id: string): Promise<void> {
+            await this.baseClient.callTypedAPI("DELETE", `/statements/${encodeURIComponent(id)}`)
         }
 
         public async GetStatement(id: string): Promise<Statement> {
@@ -194,6 +241,10 @@ export namespace statements {
             return await resp.json() as Statement
         }
 
+        /**
+         * ListStatements returns all statements. If card_id is provided, filters to
+         * only those statements that include that card.
+         */
         public async ListStatements(params: ListStatementsParams): Promise<ListStatementsResponse> {
             // Convert our params into the objects we need for the request
             const query = makeRecord<string, string | string[]>({
@@ -203,6 +254,15 @@ export namespace statements {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI("GET", `/statements`, undefined, {query})
             return await resp.json() as ListStatementsResponse
+        }
+
+        /**
+         * RetryStatement re-parses a statement that is in error state.
+         */
+        public async RetryStatement(id: string): Promise<Statement> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("POST", `/statements/retry/${encodeURIComponent(id)}`)
+            return await resp.json() as Statement
         }
 
         public async UpdateBalance(id: string, params: UpdateBalanceParams): Promise<Statement> {

@@ -8,6 +8,7 @@ import { CardFilter } from "@/components/dashboard/card-filter"
 import { PeriodFilter } from "@/components/dashboard/period-filter"
 import { CategoryDonutChart } from "@/components/dashboard/category-donut-chart"
 import { SpendingTrendChart } from "@/components/dashboard/spending-trend-chart"
+import { MonthlyStackedBarChart } from "@/components/dashboard/monthly-stacked-bar-chart"
 import { TransactionList } from "@/components/dashboard/transaction-list"
 
 export default function DashboardPage() {
@@ -99,7 +100,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <SpendingTrendChart data={monthlySpending} cards={allCards} selectedCardId={selectedCardId} loading={trendLoading} />
+        <MonthlyStackedBarChart data={monthlySpending} cards={allCards} selectedCardId={selectedCardId} loading={trendLoading} onMonthClick={(y, m) => { setYear(y); setMonth(m) }} />
+        <SpendingTrendChart data={monthlySpending} cards={allCards} selectedCardId={selectedCardId} loading={trendLoading} onMonthClick={(y, m) => { setYear(y); setMonth(m) }} />
 
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
